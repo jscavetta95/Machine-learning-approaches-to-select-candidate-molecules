@@ -7,13 +7,17 @@ def update_columns(df):
     new_df = df.loc[:, ['Molecular Weight','Targets','Bioactivities','AlogP',
                         'PSA','HBA','HBD','#Rotatable Bonds','ACD ApKa',
                         'ACD BpKa','ACD LogP','ACD LogD','Aromatic Rings','Heavy Atoms',
-                        'Molecular Weight (Monoisotopic)']]
+                        'Molecular Weight (Monoisotopic)', '#RO5 Violations', 'ChEMBL ID']]
     new_df = new_df.rename(index=str, columns={'#Rotatable Bonds':'Rotatable Bonds',
                                                'Molecular Weight (Monoisotopic)':'Monoisotopic Mass'})
     return new_df
 
 
 def plot_missing_by_feature(approved_drugs, non_approved_drugs, withdrawn_drugs):
+    approved_drugs = approved_drugs.drop(['ChEMBL ID', '#RO5 Violations'], axis=1)
+    non_approved_drugs = non_approved_drugs.drop(['ChEMBL ID', '#RO5 Violations'], axis=1)
+    withdrawn_drugs = withdrawn_drugs.drop(['ChEMBL ID', '#RO5 Violations'], axis=1)
+
     approved_y = approved_drugs.isnull().sum()/len(approved_drugs)
     non_approved_y = non_approved_drugs.isnull().sum()/len(non_approved_drugs)
     withdrawn_y = withdrawn_drugs.isnull().sum()/len(withdrawn_drugs)
@@ -37,6 +41,10 @@ def plot_missing_by_feature(approved_drugs, non_approved_drugs, withdrawn_drugs)
 
 
 def plot_missing_by_sample(approved_drugs, non_approved_drugs, withdrawn_drugs):
+    approved_drugs = approved_drugs.drop(['ChEMBL ID', '#RO5 Violations'], axis=1)
+    non_approved_drugs = non_approved_drugs.drop(['ChEMBL ID', '#RO5 Violations'], axis=1)
+    withdrawn_drugs = withdrawn_drugs.drop(['ChEMBL ID', '#RO5 Violations'], axis=1)
+
     approved_missing = approved_drugs.isnull().sum(axis=1)
     non_approved_missing = non_approved_drugs.isnull().sum(axis=1)
     withdrawn_missing = withdrawn_drugs.isnull().sum(axis=1)
@@ -87,7 +95,7 @@ def preprocess_dataset(df):
     from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import StandardScaler
 
-    features = df.drop(columns='Class')
+    features = df.drop('Class', axis=1)
     labels = df.loc[:, ['Class']]
 
     features_resampled, labels_resampled = RandomUnderSampler(random_state=23)\
@@ -98,10 +106,14 @@ def preprocess_dataset(df):
     y_train = pd.get_dummies(y_train).iloc[:, 0]
     y_test = pd.get_dummies(y_test).iloc[:, 0]
 
+    ro5_test = x_test[:, 15]
+    ids_test = x_test[:, 16]
+    x_train = np.delete(x_train, [15, 16], 1)
+    x_test = np.delete(x_test, [15, 16], 1)
+
     mean_variance_scaler = StandardScaler()
-    mean_variance_scaler.fit(x_train)
-    x_train = mean_variance_scaler.transform(x_train)
-    x_test = mean_variance_scaler.transform(x_test)
+    x_train = mean_variance_scaler.fit_transform(x_train.astype(float))
+    x_test = mean_variance_scaler.transform(x_test.astype(float))
 
     pca = PCA(n_components=0.90)
     x_train_pca = pca.fit_transform(x_train)
@@ -116,4 +128,4 @@ def preprocess_dataset(df):
 
     biplot(x_train_pca[:, 0:2], np.transpose(pca.components_[0:2, :]), list(features.columns))
 
-    return x_train_pca, x_test_pca, y_train, y_test
+    return x_train_pca, x_test_pca, y_train, y_test, ro5_test, ids_test
