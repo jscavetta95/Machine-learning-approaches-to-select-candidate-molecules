@@ -153,7 +153,7 @@ plt.bar((1.25, 2.25, 3.25, 4.25),
         color='lightsalmon', label='Approved vs. Withdrawn')
 
 plt.xticks((1, 2, 3, 4),
-           ('Linear Regression', 'Support Vector Machine', 'Random Forest', 'Multilayer Perceptron'),
+           ('Logistic Regression', 'Support Vector Machine', 'Random Forest', 'Multilayer Perceptron'),
            rotation=8)
 plt.ylim(0, 1)
 plt.ylabel('F Score')
